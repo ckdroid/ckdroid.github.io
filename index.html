@@ -65,6 +65,22 @@
                 shadowOffsetY: 0
             });
             layer.draw();
+        }).on('touchstart', function() {
+            this.setAttrs({
+                shadowOffset: {
+                    x: 5,
+                    y: 5
+                },
+            });
+            layer.draw();
+        }).on('touchend', function() {
+            this.to({
+                duration: 0.1,
+                easing: Konva.Easings.ElasticEaseOut,
+                shadowOffsetX: 0,
+                shadowOffsetY: 0
+            });
+            layer.draw();
         });
 
         layer.add(star);
