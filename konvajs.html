@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://unpkg.com/konva@4.0.8/konva.min.js"></script>
+    <meta charset="utf-8" />
+    <title>Konva Image Events Demo</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+<div id="container"></div>
+<script>
+    function writeMessage(message) {
+        text.text(message);
+        layer.draw();
+    }
+    function loadImages(sources, callback) {
+        var images = {};
+        var loadedImages = 0;
+        var numImages = 0;
+        for (var src in sources) {
+            numImages++;
+        }
+        for (var src in sources) {
+            images[src] = new Image();
+            images[src].onload = function() {
+                if (++loadedImages >= numImages) {
+                    callback(images);
+                }
+            };
+            images[src].src = sources[src];
+        }
+    }
+    function buildStage(images) {
+
+        //console.log((window.innerWidth<window.innerHeight)?window.innerWidth:window.innerHeight);
+        var adapt=(window.innerWidth<window.innerHeight)?window.innerWidth:window.innerHeight;
+
+
+        for(var img in images){
+            console.log(images[img])
+            //var posx=window.innerWidth/2-
+            var item=new Konva.Image({
+                tag:img,
+                image: images[img],
+                width: adapt,
+                height: adapt /4 *3,
+                x: window.innerWidth/2 - adapt/2,
+            });
+            item.cache();
+            item.drawHitFromCache();
+
+
+            item.on('mousemove', function() {
+                //console.log("in---");
+                stage.container().style.cursor = 'pointer';
+            });
+
+            item.on('mouseout', function() {
+                //console.log("out---");
+                stage.container().style.cursor = 'default';
+            });
+
+            layer.add(item);
+        }
+
+
+
+        layer.add(text);
+        stage.add(layer);
+    }
+    var stage = new Konva.Stage({
+        container: 'container',
+        width: window.innerWidth,
+        height: window.innerHeight,
+    });
+    stage.on('click tap', function(evt) {
+        var shape = evt.target;
+        //console.log(shape.attrs.tag);
+        writeMessage(shape.attrs.tag);
+    });
+
+    var layer = new Konva.Layer();
+
+    var text = new Konva.Text({
+        x: 10,
+        y: 10,
+        fontFamily: 'Calibri',
+        fontSize: 24,
+        text: '',
+        fill: 'black'
+    });
+
+    var sources = {
+        HOME: 'HOME/HOME.png',
+        HOME_1: 'HOME/link/2.HOME.1.png',
+        TAV_15: 'HOME/link/15.TAV-05.21MP2.01.png',
+        TAV_17: 'HOME/link/17.TAV-05.21MP2.02.png'
+    };
+
+    loadImages(sources, buildStage);
+</script>
+</body>
+</html>

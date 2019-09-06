@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0,user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <title>THREE.js Loader</title>
+    <style>
+        html, body{
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            background-color: #fff;
+            font-family: Helvetica;
+        }
+        #stage, video, canvas{
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        canvas{
+            z-index: 99;
+        }
+    </style>
+</head>
+<body>
+<div id="stage"></div>
+<script type="text/javascript" src="jss/three.js"></script>
+<script type="text/javascript" src="jss/OrbitControls.js"></script>
+<script type="text/javascript">
+
+    var u = navigator.userAgent;
+    var isAndroid = u.indexOf('Android') > -1 || u.indexOf('Adr') > -1; // android终端
+    var isiOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); // ios终端
+    var isWeiXin = !!u.match(/MicroMessenger/i); // 微信
+
+    var stage = document.querySelector('#stage');
+    var container;
+    var scene, camera, renderer, controls;
+    var SCREEN_WIDTH =  window.innerWidth;
+    var SCREEN_HEIGHT = window.innerHeight;
+    var angle = 90;
+    var nearest = 1;
+    var farthest = 1000;
+    var mixers = new Array();
+    var clock = new THREE.Clock();
+
+    init();
+
+    function init(){
+        container = document.createElement('div');
+        stage.appendChild(container);
+        // 创建场景
+        scene = new THREE.Scene();
+        // 创建相机
+        camera =  new THREE.PerspectiveCamera(angle, SCREEN_WIDTH / SCREEN_HEIGHT, nearest, farthest);
+        camera.position.set(8, 8, 15);
+        // 环境光
+        scene.add(new THREE.AmbientLight(4210752, 3));
+        // 平行光
+        var light = new THREE.DirectionalLight(16777215, 1);
+        light.position.set(0, 50, 50);
+        scene.add(light);
+        // 坐标系
+        var axes = new THREE.AxisHelper(30);
+        scene.add(axes);
+
+        // 加载提示
+        var manager = new THREE.LoadingManager();
+        manager.onProgress = function(item, loaded, total){
+            console.log(item, loaded, total);
+        };
+
+        var onProgress = function(xhr){
+            if(xhr.lengthComputable){
+                var percentComplete = xhr.loaded / xhr.total * 100;
+                console.log(Math.round(percentComplete, 2) + '% downloaded');
+            }
+        };
+
+        var onError = function(xhr){
+            console.error(xhr);
+        };
+
+
+
+
+        var js_loader = new THREE.JSONLoader(manager);
+
+
+        // json动画
+        js_loader.load('./model/climb.js', function(geometry, materials){
+
+            for(var i = 0; i < materials.length; i++){
+                materials[i].skinning = true;
+            }
+            var material = new THREE.MultiMaterial(materials);
+            var mesh = new THREE.SkinnedMesh(geometry, material);
+            var mixer = new THREE.AnimationMixer(mesh);
+            mixers.push(mixer);
+            mixer.clipAction(geometry.animations[0]).play();
+
+            mesh.scale.multiplyScalar(.05);
+            mesh.lookAt(new THREE.Vector3(0, 0, 0));
+            mesh.position.set(3, 0, 0);
+
+            scene.add(mesh);
+        }, onProgress, onError);
+
+
+        // 创建渲染器
+        renderer = new THREE.WebGLRenderer({
+            antialias: true,    // 平滑效果
+            alpha: true,    // canvas背景透明
+        });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+        container.appendChild(renderer.domElement);
+
+        // 创建控制器
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.target.set(0, 0, 0);
+
+        animate();
+
+        window.addEventListener('resize', onWindowResize, false);
+    }
+
+    function animate(){
+        requestAnimationFrame(animate);
+        render();
+    }
+
+    function render(){
+        var delta = clock.getDelta();
+        if (mixers.length > 0) {
+            for (var i = 0; i < mixers.length; i ++) {
+                mixers[i].update(delta);
+            }
+        }
+        controls.update();
+        renderer.render( scene, camera );
+    }
+
+    // 窗口改变重置摄像头
+    function onWindowResize(){
+        SCREEN_WIDTH = window.innerWidth;
+        SCREEN_HEIGHT = window.innerHeight;
+        renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+        camera.aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+        camera.updateProjectionMatrix();
+    }
+
+</script>
+</body>
+</html>
